@@ -1,35 +1,37 @@
 import logging
-
 import pandas as pd
 from zenml import step
+from pydantic import BaseModel, ConfigDict
 
+class DataFrameOutput(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)  # ✅ Allow arbitrary types
+    df: pd.DataFrame
 
 class IngestData:
-    """
-    Data ingestion class which ingests data from the source and returns a DataFrame.
-    """
+    """Data ingestion class which ingests data from the source and returns a DataFrame."""
 
-    def __init__(self) -> None:
-        """Initialize the data ingestion class."""
-        pass
+    def __init__(self, data_path: str) -> None:
+        self.data_path = data_path
 
     def get_data(self) -> pd.DataFrame:
-        df = pd.read_csv("./data/olist_customers_dataset.csv")
+        df = pd.read_csv(self.data_path)
         return df
-
 
 @step
-def ingest_df() -> pd.DataFrame:
+def ingest_df(data_path: str) -> DataFrameOutput:
     """
+    Ingest data from the given file path.
+
     Args:
-        None
+        data_path (str): Path to the dataset.
+
     Returns:
-        df: pd.DataFrame
+        DataFrameOutput: Loaded DataFrame wrapped in Pydantic model.
     """
     try:
-        ingest_data = IngestData()
+        ingest_data = IngestData(data_path)
         df = ingest_data.get_data()
-        return df
+        return DataFrameOutput(df=df)  # ✅ Wrap DataFrame in Pydantic model
     except Exception as e:
         logging.error(e)
         raise e
